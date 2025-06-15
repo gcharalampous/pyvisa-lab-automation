@@ -1,16 +1,11 @@
-# pyvisa-lab-automation
+# PyVISA Lab Automation
 
-A modular Python toolkit for automating photonics lab instrumentation using PyVISA.
+A modular Python toolkit for automating photonics and electronics lab instrumentation using PyVISA.
 
 ## Overview
 
 This project provides a unified and extensible interface to control laboratory instruments frequently used in silicon photonics test setups. Built around the PyVISA library, it enables fast prototyping, streamlined data collection, and measurement automation via scripting or notebooks.
 
-### Supported Instrument Types
-- Source meters (e.g., Keithley 2400)
-- Optical power meters
-- Tunable laser sources
-- Lightwave multimeters
 
 ## Features
 
@@ -21,67 +16,48 @@ This project provides a unified and extensible interface to control laboratory i
 - Integration with Jupyter notebooks
 - GPIB communication supported
 
-## Project Structure
 
-```
-pyvisa-lab-automation/
-├── configs/           # YAML configuration files
-├── controllers/       # Measurement automation scripts
-├── data/              # Raw experimental data
-├── instruments/       # Modular instrument drivers
-├── plots/             # Auto-generated result visualizations
-├── utils/             # Logger, config loader, plot utilities
-├── main.ipynb         # Example MZI notebook (consider renaming)
-├── requirements.txt
-└── README.md
-```
 
-## Installation
+## Measurement Notebooks
 
-1. Clone the repository:
+| Notebook File | Description |
+|---------------|-------------|
+| [`mzi_phase_shifter.ipynb`](./mzi_phase_shifter.ipynb) | Measures transmission of an MZI phase shifter using laser sweep and powermeter readout. |
+| [`ring_resonator.ipynb`](./ring_resonator.ipynb) | Sweeps wavelength across a ring resonator and logs optical power response. |
 
-```bash
-git clone https://github.com/gcharalampous/pyvisa-lab-automation.git
-cd pyvisa-lab-automation
-```
+---
 
-2. (Optional) Create a virtual environment:
+## Shared Components
 
-```bash
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-```
+| Folder | Description |
+|--------|-------------|
+| `instruments/` | Instrument drivers (Keithley, laser source, powermeter, etc.) |
+| `utils/`       | Common utilities for plotting, logging, sweeping, etc. |
+| `config/`      | Device-specific YAML config files |
+| `results/`     | Automatically saved CSVs, logs, and plots |
 
-3. Install dependencies:
+---
 
+## Dependencies
+
+Install via pip:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
 
-You can use the toolkit in either Python scripts or Jupyter notebooks.
+---
 
-### Example: Keithley 2400 IV Measurement
+## Getting Started
 
-```python
-from instruments.keithley2400 import Keithley2400SourceMeter
+1. Connect your instruments.
+2. Click on the notebook corresponding to the device you want to measure.
+3. Modify config parameters as needed.
+4. Run the notebook.
 
-keithley = Keithley2400SourceMeter()
-keithley.initialize()
-resistance = keithley.read_resistance_configured()
-keithley.close()
-```
-
-### Jupyter Notebook
-
-The included notebook `main.ipynb` (rename recommended) demonstrates full experiment orchestration using YAML configuration and controller classes.
-
-## Extending the Toolkit
-
-To add support for new instruments:
-- Create a new class in `instruments/`, subclassing `SCPIInstrument` or one of the existing abstract base classes like `BaseSourceMeter`.
+---
 
 ## License
 
-MIT License – see [`LICENSE`](LICENSE) for details.
+MIT License
+
