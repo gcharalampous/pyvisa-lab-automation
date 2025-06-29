@@ -77,7 +77,7 @@ class Agilent8163Multimeter(SCPIInstrument, BaseLaserSource, BasePowerMeter):
         if not self.connected:
             raise RuntimeError("Cannot measure power: Instrument not connected.")
         response = self.main.query(
-            f'fetch{self.power_slot}:chan{self.power_channel}:pow?'
+            f'read{self.power_slot}:chan{self.power_channel}:pow?'
         )
         try:
             power = float(response)
