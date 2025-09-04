@@ -22,8 +22,10 @@ This project provides a unified and extensible interface to control laboratory i
 
 | Notebook File | Description |
 |---------------|-------------|
+| [`Optical_Frequency_Response.ipynb`](./Optical_Frequency_Response.ipynb) | Automates measurement and analysis of optical frequency response in photonic experiments. |
+| [`LIV_Curves_Sourcemeter_Laser.ipynb`](./LIV_Curves_Sourcemeter_Laser.ipynb) | Guides through IV and LIV curve measurement, instrument setup, configuration, and data analysis. |
+| [`IV_Curves_Sourcemeter.ipynb`](./IV_Curves_Sourcemeter.ipynb) | Demonstrates loading, processing, and analyzing IV curves for photonic devices. |
 | [`mzi_phase_shifter.ipynb`](./mzi_phase_shifter.ipynb) | Measures transmission of an MZI phase shifter using laser sweep and powermeter readout. |
-| [`ring_resonator.ipynb`](./ring_resonator.ipynb) | Sweeps wavelength across a ring resonator and logs optical power response. |
 
 ---
 
