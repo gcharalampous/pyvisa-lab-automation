@@ -116,3 +116,58 @@ def measure_liv_curve(
         return (("Voltage (V)", "Current (A)", "Optical Power (dBm)"), results)
     finally:
         sourcemeter.turn_off()
+        
+        
+        
+def measure_laser_liv_curve_by_source_current(
+    sourcemeter: BaseSourceMeter,
+    powermeter: BasePowerMeter,
+    start_current: float = 10e-6,
+    stop_current: float = 100e-6,
+    step_current: float = 10e-6,
+    measure_voltage_range: float = 1E-3,
+    voltage_limit: float = 0.01,
+    wire_mode: int = 2,
+    center_wavelength: float = 1550.0,  # Wavelength in nm
+    sourcemeter_delay: float = 0.1,
+    powermeter_delay: float = 0.1,
+    logger=None
+) -> Tuple[Tuple[str, str, str], List[Tuple[float, float, float]]]:
+
+    try:
+        if not sourcemeter.connected:
+            raise RuntimeError("Cannot perform sweep: Instrument not connected.")
+        if not powermeter.connected:
+            raise RuntimeError("Cannot perform sweep: Power meter not connected.")
+            
+    
+        sourcemeter.initialize(wire_mode=wire_mode)
+        powermeter.initialize()
+        # laser.set_wavelength(center_wavelength)  # Set wavelength to 1550 nm, adjust as needed
+        results = []
+        currents = np.arange(start_current, stop_current + step_current, step_current)
+        pbar = tqdm(total=len(currents), desc=f"Sweeping {start_current:.3f} → {stop_current:.3f} A", unit="A")
+
+        
+        for i, cur in enumerate(currents):
+            
+            read_voltage = sourcemeter.source_current_and_read_voltage(source_current_level=cur,
+                source_current_range=np.abs(stop_current - start_current) + np.abs(step_current),
+                measure_voltage_range=measure_voltage_range,  # Adjust as needed
+                voltage_limit=voltage_limit,  # Adjust as needed
+                delay=sourcemeter_delay
+           )
+            time.sleep(powermeter_delay)
+            read_optical_power = powermeter.measure_power()  # Measure optical power
+            
+            if logger:
+                logger.info(f"Voltage: {read_voltage:.3f} V, Current: {cur:.3f} A, Optical Power: {read_optical_power:.3f} dBm")
+            results.append((read_voltage, cur, read_optical_power))
+
+            pbar.update(1)
+
+        pbar.close()
+
+        return (("Voltage (V)", "Current (A)", "Optical Power (dBm)"), results)
+    finally:
+        sourcemeter.turn_off()

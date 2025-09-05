@@ -168,6 +168,54 @@ class Keithley2400SourceMeter(SCPIInstrument, BaseSourceMeter):
         current_values = [float(val) for val in current_response.strip().split(',') if val]
         return np.array(current_values)
      
+     
+     
+     
+     
+    def source_current_and_read_voltage(
+        self,
+        source_current_level: float,
+        source_current_range: float,
+        measure_voltage_range: float = 1.0,
+        voltage_limit: float = 1.0,
+        delay: float = 0.1
+    ) -> np.ndarray:
+        """
+        Sources a specified DC current using the Keithley 2400 and measures the resulting voltage.
+
+        Parameters:
+            source_current_level (float): The current level to source in amperes (A).
+            source_current_range (float): The current range to use for sourcing in amperes (A).
+            measure_voltage_range (float, optional): The measurement range for voltage in volts (V). Default is 1.0 V.
+            voltage_limit (float, optional): The compliance (protection) voltage limit in volts (V). Default is 1 V.
+            delay (float, optional): Delay in seconds before reading the measurement. Default is 0.1 s.
+
+        Returns:
+            np.ndarray: Array of measured voltage values in volts (V).
+
+        Raises:
+            RuntimeError: If the instrument is not connected.
+        """
+        if not self.connected:
+            raise RuntimeError("Instrument not connected.")
+
+        self.main.write(":SOUR:FUNC CURR")
+        self.main.write(":SOUR:CURR:MODE FIXED")
+        self.main.write(":SENS:FUNC 'VOLT'")
+        self.main.write(f":SOUR:CURR:RANG {source_current_range}")
+        self.main.write(f":SOUR:CURR:LEV {source_current_level}")
+        self.main.write(f":SENS:VOLT:PROT {voltage_limit}")
+        self.main.write(f":SENS:VOLT:RANG {measure_voltage_range}")
+        self.main.write(":FORM:ELEM VOLT")
+        self.main.write(":OUTP ON")
+        time.sleep(delay)
+        current_response = self.main.query(":READ?")
+        # self.main.write(":OUTP OFF")
+        current_values = [float(val) for val in current_response.strip().split(',') if val]
+        return np.array(current_values) 
+     
+     
+     
        
     def turn_off(self):
         """

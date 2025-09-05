@@ -45,6 +45,17 @@ class BaseSourceMeter(ABC):
         pass
 
     @abstractmethod
+    def source_current_and_read_voltage(self,
+        source_current_level: float,
+        source_current_range: float,
+        measure_voltage_range: float = 1E-3,
+        voltage_limit: float = 1,
+        delay: float = 0.1) -> np.ndarray:
+        """Source a current and read the resulting voltage, returning as a numpy array."""
+        pass
+
+
+    @abstractmethod
     def turn_off(self):
         """Ensure the source meter is safely turned off."""
         pass
