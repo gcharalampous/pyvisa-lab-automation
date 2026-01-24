@@ -1,7 +1,7 @@
 Agilent8163Multimeter:
   address: "GPIB0::20::INSTR"        # GPIB address
   power_slot: 2                      # Slot number for the power
-  laser_slot: 1                      # Slot number for the laser
+  laser_slots: [1, 2, 3, 4]          # Slot numbers for the lasers (can be single int or array)
   power_channel: 1                   # Channel number for the power meter
   start_wavelength: 1549.0           # In nm
   stop_wavelength: 1551.0            # In nm

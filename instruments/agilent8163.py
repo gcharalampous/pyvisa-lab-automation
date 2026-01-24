@@ -22,7 +22,8 @@ class Agilent8163Multimeter(SCPIInstrument, BaseLaserSource, BasePowerMeter):
     Agilent 8163 Lightwave Multimeter
 
     Parameters:
-    - laser_slot (int): Slot number for the tunable laser module.
+    - laser_slots (int or list): Slot number(s) for the tunable laser module(s). 
+                                  Can be a single int or a list of ints for multiple lasers.
     - power_slot (int): Slot number for the power meter module.
     - power_channel (int): Channel number (typically 1 or 2) for power measurement.
 
@@ -35,13 +36,17 @@ class Agilent8163Multimeter(SCPIInstrument, BaseLaserSource, BasePowerMeter):
     def __init__(
         self,
         address='GPIB0::20::INSTR',
-        laser_slot=1,
+        laser_slots=1,
         power_slot=2,
         power_channel=1,
         resource_manager=None
     ):
         self.address = address
-        self.laser_slot = laser_slot
+        # Support both single slot (int) and multiple slots (list)
+        if isinstance(laser_slots, int):
+            self.laser_slots = [laser_slots]
+        else:
+            self.laser_slots = list(laser_slots)
         self.power_slot = power_slot
         self.power_channel = power_channel
         self.connected = False
@@ -64,14 +69,30 @@ class Agilent8163Multimeter(SCPIInstrument, BaseLaserSource, BasePowerMeter):
         if not self.connected:
             raise RuntimeError("Cannot initialize: Instrument not connected.")
         self.main.write("*CLS")
-        self.main.write(f"sour{self.laser_slot}:pow:stat 1")
-        logger.info("Laser module initialized.")
+        # Initialize all laser modules
+        for slot in self.laser_slots:
+            self.main.write(f"sour{slot}:pow:stat 1")
+            logger.info(f"Laser module in slot {slot} initialized.")
 
-    def set_wavelength(self, wavelength: float):
+    def set_wavelength(self, wavelength: float, slot=None):
+        """
+        Set wavelength for a specific laser slot or all slots.
+        
+        Parameters:
+        - wavelength (float): Wavelength in nanometers
+        - slot (int, optional): Specific slot to set. If None, sets all laser slots.
+        """
         if not self.connected:
             raise RuntimeError("Cannot set wavelength: Instrument not connected.")
-        self.main.write(f'sour{self.laser_slot}:wav {wavelength}NM')
-        logger.debug(f"Wavelength set to {wavelength} nm.")
+        
+        slots_to_set = [slot] if slot is not None else self.laser_slots
+        
+        for s in slots_to_set:
+            if s not in self.laser_slots:
+                logger.warning(f"Slot {s} not in configured laser slots {self.laser_slots}")
+                continue
+            self.main.write(f'sour{s}:wav {wavelength}NM')
+            logger.info(f"Wavelength set to {wavelength} nm on slot {s}.")
 
     def measure_power(self) -> float:
         if not self.connected:
@@ -109,13 +130,45 @@ class Agilent8163Multimeter(SCPIInstrument, BaseLaserSource, BasePowerMeter):
         logger.info("Connection closed.")
 
 
-    def turn_off(self):
-            if not self.connected:
-                raise RuntimeError("Cannot turn off laser: Instrument not connected.")
-            self.main.write(f"sour{self.laser_slot}:pow:stat 0")
-            logger.info("Laser turned off")
+    def turn_off(self, slot=None):
+        """
+        Turn off laser(s).
+        
+        Parameters:
+        - slot (int, optional): Specific slot to turn off. If None, turns off all laser slots.
+        """
+        if not self.connected:
+            raise RuntimeError("Cannot turn off laser: Instrument not connected.")
+        
+        slots_to_turn_off = [slot] if slot is not None else self.laser_slots
+        
+        for s in slots_to_turn_off:
+            if s not in self.laser_slots:
+                logger.warning(f"Slot {s} not in configured laser slots {self.laser_slots}")
+                continue
+            self.main.write(f"sour{s}:pow:stat 0")
+            logger.info(f"Laser in slot {s} turned off")
+
+    def turn_on(self, slot=None):
+        """
+        Turn on laser(s).
+        
+        Parameters:
+        - slot (int, optional): Specific slot to turn on. If None, turns on all laser slots.
+        """
+        if not self.connected:
+            raise RuntimeError("Cannot turn on laser: Instrument not connected.")
+        
+        slots_to_turn_on = [slot] if slot is not None else self.laser_slots
+        
+        for s in slots_to_turn_on:
+            if s not in self.laser_slots:
+                logger.warning(f"Slot {s} not in configured laser slots {self.laser_slots}")
+                continue
+            self.main.write(f"sour{s}:pow:stat 1")
+            logger.info(f"Laser in slot {s} turned on")
 
 
     def __str__(self):
         status = "connected" if self.connected else "disconnected"
-        return f"Agilent8163Multimeter(id={self.id}, address={self.address}, status={status})"
+        return f"Agilent8163Multimeter(id={self.id}, address={self.address}, laser_slots={self.laser_slots}, status={status})"
