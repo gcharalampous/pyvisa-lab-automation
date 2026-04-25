@@ -9,7 +9,7 @@ class BaseLaserSource(ABC):
         pass
 
     @abstractmethod
-    def set_wavelength(self, wavelength: float):
+    def set_wavelength(self, wavelength: float, slot=None, verbose: bool = False):
         """Set the laser output wavelength in nanometers."""
         pass
     

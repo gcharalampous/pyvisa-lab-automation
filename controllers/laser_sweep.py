@@ -4,9 +4,10 @@ laser_sweep.py
 Handles sweeping the tunable laser using Agilent 8164.
 """
 from instruments.laser_base import BaseLaserSource
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import numpy as np
 import time
+import sys
 from typing import List, Tuple
 
 def perform_laser_sweep(
@@ -15,7 +16,7 @@ def perform_laser_sweep(
     stop_wl: float = 1.551,
     step: float = 0.01,
     delay: float = 0.1,
-    logger=None
+    verbose_wavelength_updates: bool = False,
 ) -> Tuple[Tuple[str, str], List[Tuple[float, float]]]:
     """
     Sweep the laser wavelength from `start_wl` to `stop_wl` in steps of `step` nm.
@@ -30,7 +31,7 @@ def perform_laser_sweep(
         stop_wl (float): Ending wavelength in nm.
         step (float): Wavelength increment in nm.
         delay (float): Delay in seconds between measurements.
-        logger (optional): Logger for measurement info.
+        verbose_wavelength_updates (bool): If True, logs each wavelength set at INFO level.
 
     Returns:
         Tuple[Tuple[str, str], List[Tuple[float, float]]]: 
@@ -44,13 +45,18 @@ def perform_laser_sweep(
         laser.initialize()
         results = []
         wavelengths = np.arange(start_wl, stop_wl + step / 2, step)
-        pbar = tqdm(total=len(wavelengths), desc=f"Sweeping {start_wl:.3f} → {stop_wl:.3f} nm", unit="nm")
+        pbar = tqdm(
+            total=len(wavelengths),
+            desc=f"Sweeping {start_wl:.3f} → {stop_wl:.3f} nm",
+            unit="nm",
+            file=sys.stdout,
+            dynamic_ncols=True,
+            leave=True,
+        )
         
         for wl in wavelengths:
-            laser.set_wavelength(wl)
+            laser.set_wavelength(wl, verbose=verbose_wavelength_updates)
             power = laser.measure_power()
-            if logger:
-                logger.info(f"Wavelength: {wl:.3f} nm, Power: {power:.3f} dBm")
             results.append((wl, power))
             time.sleep(delay)
             pbar.update(1)

@@ -74,13 +74,14 @@ class Agilent8163Multimeter(SCPIInstrument, BaseLaserSource, BasePowerMeter):
             self.main.write(f"sour{slot}:pow:stat 1")
             logger.info(f"Laser module in slot {slot} initialized.")
 
-    def set_wavelength(self, wavelength: float, slot=None):
+    def set_wavelength(self, wavelength: float, slot=None, verbose: bool = False):
         """
         Set wavelength for a specific laser slot or all slots.
         
         Parameters:
         - wavelength (float): Wavelength in nanometers
         - slot (int, optional): Specific slot to set. If None, sets all laser slots.
+        - verbose (bool, optional): If True, log each wavelength set at INFO level.
         """
         if not self.connected:
             raise RuntimeError("Cannot set wavelength: Instrument not connected.")
@@ -92,7 +93,10 @@ class Agilent8163Multimeter(SCPIInstrument, BaseLaserSource, BasePowerMeter):
                 logger.warning(f"Slot {s} not in configured laser slots {self.laser_slots}")
                 continue
             self.main.write(f'sour{s}:wav {wavelength}NM')
-            logger.info(f"Wavelength set to {wavelength} nm on slot {s}.")
+            if verbose:
+                logger.info(f"Wavelength set to {wavelength} nm on slot {s}.")
+            else:
+                logger.debug(f"Wavelength set to {wavelength} nm on slot {s}.")
 
     def measure_power(self) -> float:
         if not self.connected:

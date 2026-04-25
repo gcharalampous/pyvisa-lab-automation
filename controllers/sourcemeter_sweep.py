@@ -3,10 +3,14 @@ sourcemeter_sweep.py
 
 Handles sweeping the sourcemeter voltage
 """
+import sys
+
+import sys
+
 from instruments.sourcemeter_base import BaseSourceMeter
 from instruments.power_base import BasePowerMeter
 from instruments.laser_base import BaseLaserSource
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import numpy as np
 import time
 from typing import List, Tuple
@@ -32,7 +36,14 @@ def measure_iv_curve(
         sourcemeter.initialize(wire_mode=wire_mode)
         results = []
         voltages = np.arange(start_v, stop_v + step, step)
-        pbar = tqdm(total=len(voltages), desc=f"Sweeping {start_v:.3f} → {stop_v:.3f} V", unit="V")
+        pbar = tqdm(
+            total=len(voltages),
+            desc=f"Sweeping {start_v:.3f} → {stop_v:.3f} V",
+            unit="V",
+            file=sys.stdout,
+            dynamic_ncols=True,
+            leave=True,
+        )
 
         
         for i, v in enumerate(voltages):
@@ -91,6 +102,14 @@ def measure_liv_curve(
         results = []
         voltages = np.arange(start_v, stop_v + step, step)
         pbar = tqdm(total=len(voltages), desc=f"Sweeping {start_v:.3f} → {stop_v:.3f} V", unit="V")
+        pbar = tqdm(
+            total=len(voltages),
+            desc=f"Sweeping {start_v:.3f} → {stop_v:.3f} V",
+            unit="V",
+            file=sys.stdout,
+            dynamic_ncols=True,
+            leave=True,
+        )
 
         
         for i, v in enumerate(voltages):
@@ -146,7 +165,14 @@ def measure_laser_liv_curve_by_source_current(
         # laser.set_wavelength(center_wavelength)  # Set wavelength to 1550 nm, adjust as needed
         results = []
         currents = np.arange(start_current, stop_current + step_current, step_current)
-        pbar = tqdm(total=len(currents), desc=f"Sweeping {start_current:.3f} → {stop_current:.3f} A", unit="A")
+        pbar = tqdm(
+            total=len(currents),
+            desc=f"Sweeping {start_current:.3f} → {stop_current:.3f} A",
+            unit="A",
+            file=sys.stdout,
+            dynamic_ncols=True,
+            leave=True,
+        )
 
         
         for i, cur in enumerate(currents):
