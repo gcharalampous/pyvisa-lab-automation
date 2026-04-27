@@ -1,5 +1,5 @@
 Agilent8163Multimeter:
-  address: "GPIB0::20::INSTR"        # GPIB address
+  address: "GPIB0::12::INSTR"        # GPIB address
   power_slot: 2                      # Slot number for the power
   laser_slots: [1, 2, 3, 4]          # Slot numbers for the lasers (can be single int or array)
   power_channel: 1                   # Channel number for the power meter
@@ -7,6 +7,15 @@ Agilent8163Multimeter:
   stop_wavelength: 1551.0            # In nm
   step: 0.01                         # In nm (user-defined step size)
   delay: 0.1                         # Seconds between steps
+
+
+SantecTSL570:
+  address: "GPIB0::1::INSTR"        # GPIB address
+  power: 0.0                         # In dBm
+  start_wavelength: 1300.0           # In nm
+  stop_wavelength: 1305.0            # In nm
+  step: 0.01                         # In nm (user-defined step size)
+  delay: 0.1  
 
 Keithley2400:
   address: "GPIB0::24::INSTR"        # GPIB address
