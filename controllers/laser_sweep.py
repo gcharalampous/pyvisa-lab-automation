@@ -4,6 +4,7 @@ laser_sweep.py
 Handles sweeping the tunable laser using Agilent 8164.
 """
 from instruments.laser_base import BaseLaserSource
+from instruments.power_base import BasePowerMeter
 from tqdm.auto import tqdm
 import numpy as np
 import time
@@ -12,6 +13,7 @@ from typing import List, Tuple
 
 def perform_laser_sweep(
     laser: BaseLaserSource,
+    powermeter: BasePowerMeter,
     start_wl: float = 1.549,
     stop_wl: float = 1.551,
     step: float = 0.01,
@@ -27,6 +29,7 @@ def perform_laser_sweep(
 
     Args:
         laser (BaseLaser): Laser instrument object.
+        powermeter (BasePowerMeter): Power meter instrument object.
         start_wl (float): Starting wavelength in nm.
         stop_wl (float): Ending wavelength in nm.
         step (float): Wavelength increment in nm.
@@ -43,6 +46,7 @@ def perform_laser_sweep(
     """
     try:
         laser.initialize()
+        laser.turn_on()
         results = []
         wavelengths = np.arange(start_wl, stop_wl + step / 2, step)
         pbar = tqdm(
@@ -56,7 +60,7 @@ def perform_laser_sweep(
         
         for wl in wavelengths:
             laser.set_wavelength(wl, verbose=verbose_wavelength_updates)
-            power = laser.measure_power()
+            power = powermeter.measure_power()
             results.append((wl, power))
             time.sleep(delay)
             pbar.update(1)

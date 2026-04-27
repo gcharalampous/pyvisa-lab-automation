@@ -12,10 +12,15 @@ class BaseLaserSource(ABC):
     def set_wavelength(self, wavelength: float, slot=None, verbose: bool = False):
         """Set the laser output wavelength in nanometers."""
         pass
+
+    @abstractmethod
+    def turn_on(self):
+        """Turn the laser on."""
+        pass
     
     @abstractmethod
     def turn_off(self):
-        """Ensure the laser is safely turned off."""
+        """Turn the laser off."""
         pass
     
     @abstractmethod
