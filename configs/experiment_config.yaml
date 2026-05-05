@@ -12,16 +12,16 @@ Agilent8163Multimeter:
 SantecTSL570:
   address: "GPIB0::1::INSTR"        # GPIB address
   power: 0.0                         # In dBm
-  start_wavelength: 1300.0           # In nm
-  stop_wavelength: 1305.0            # In nm
-  step: 0.01                         # In nm (user-defined step size)
-  delay: 0.1  
+  start_wavelength: 1310.0           # In nm
+  stop_wavelength: 1313.0            # In nm
+  step: 0.1                         # In nm (user-defined step size)
+  delay: 0.01  
 
 Keithley2400:
-  address: "GPIB0::24::INSTR"        # GPIB address
+  address: "GPIB0::25::INSTR"        # GPIB address
   start_voltage: 0.0                 # In Volts
-  stop_voltage: 1.5                  # In Volts
-  step_voltage: 0.01                 # In Volts
+  stop_voltage: 2.0                  # In Volts
+  step_voltage: 1.0                 # In Volts
   start_current: 0.0                 # In Amps
   stop_current: 1e-3                  # In Amps
   step_current: 1e-4                  # In Amps
@@ -36,5 +36,5 @@ Keithley2400:
 
 
 DUT:
-  name: "NAME"          # Name of the device under test
-  type: "TYPE"             # Type of the device
+  name: "SB6_Fine_Test"          # Name of the device under test
+  type: "GF2_MOSCAP"             # Type of the device

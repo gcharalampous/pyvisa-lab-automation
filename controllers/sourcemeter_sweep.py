@@ -5,8 +5,7 @@ Handles sweeping the sourcemeter voltage
 """
 import sys
 
-import sys
-
+import pandas as pd
 from instruments.sourcemeter_base import BaseSourceMeter
 from instruments.power_base import BasePowerMeter
 from instruments.laser_base import BaseLaserSource
@@ -197,3 +196,78 @@ def measure_laser_liv_curve_by_source_current(
         return (("Voltage (V)", "Current (A)", "Optical Power (dBm)"), results)
     finally:
         sourcemeter.turn_off()
+
+
+
+def measure_spectral_shift_vs_voltage(
+    sourcemeter: BaseSourceMeter,
+    powermeter: BasePowerMeter,
+    laser: BaseLaserSource,
+    start_v: float = -1.0,
+    stop_v: float = 1.0,
+    step_v: float = 0.01,
+    start_wl: float = 1.549,
+    stop_wl: float = 1.551,
+    step_wl: float = 0.01,
+    measure_current_range: float = 1E-3,
+    current_limit: float = 0.01,
+    wire_mode: int = 2,
+    sourcemeter_delay: float = 0.1,
+    powermeter_delay: float = 0.1,
+    verbose_wavelength_updates: bool = False,
+) -> pd.DataFrame:                                        
+
+    try:
+        if not sourcemeter.connected:
+            raise RuntimeError("Cannot perform sweep: Instrument not connected.")
+        if not powermeter.connected:
+            raise RuntimeError("Cannot perform sweep: Power meter not connected.")
+        if not laser.connected:
+            raise RuntimeError("Cannot perform sweep: Laser not connected.")       
+        
+        try:
+            laser.initialize()
+            powermeter.initialize()
+            sourcemeter.initialize(wire_mode=wire_mode)
+            laser.turn_on()
+            results = []
+            wavelengths = np.arange(start_wl, stop_wl + step_wl / 2, step_wl)
+            voltages = np.arange(start_v, stop_v + step_v / 2, step_v)
+
+            pbar = tqdm(
+                total=len(voltages) * len(wavelengths),
+                desc=f"V: {start_v:.2f}→{stop_v:.2f}, λ: {start_wl:.3f}→{stop_wl:.3f} nm",
+                unit="pt",
+                file=sys.stdout,
+                dynamic_ncols=True,
+                leave=True,
+            )
+
+            for v in voltages:
+                read_current = sourcemeter.source_voltage_and_read_current(
+                    source_voltage_level=v,
+                    source_voltage_range=np.abs(stop_v - start_v) + np.abs(step_v),
+                    measure_current_range=measure_current_range,
+                    current_limit=current_limit,
+                    delay=sourcemeter_delay,
+                )
+                time.sleep(sourcemeter_delay)  # settle after bias change
+
+                for wl in wavelengths:
+                    laser.set_wavelength(wl, verbose=verbose_wavelength_updates)
+                    time.sleep(powermeter_delay)  # settle BEFORE reading
+                    power = powermeter.measure_power()
+                    results.append((v, wl, power, read_current))
+                    pbar.update(1)
+
+            pbar.close()
+            return pd.DataFrame(results,
+            columns=["Voltage (V)", "Wavelength (nm)",
+                 "Power (dBm)", "Current (A)"],
+    )
+        finally:
+            laser.turn_off()
+            sourcemeter.turn_off()      
+    
+    finally:
+        pass
