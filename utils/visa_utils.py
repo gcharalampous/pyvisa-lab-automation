@@ -5,114 +5,112 @@ logger = setup_logger(__name__)
 
 
 def _parse_interface(resource_str: str) -> str:
-    """Infer interface type from the VISA resource string prefix."""
     r = resource_str.upper()
     if r.startswith("GPIB"):
         return "GPIB"
-    elif r.startswith("USB"):
+    if r.startswith("USB"):
         return "USB"
-    elif r.startswith("TCPIP"):
+    if r.startswith("TCPIP"):
         return "TCP/IP (LAN)"
-    elif r.startswith("ASRL") or r.startswith("COM"):
+    if r.startswith("ASRL") or r.startswith("COM"):
         return "Serial (RS-232)"
-    elif r.startswith("PXI"):
+    if r.startswith("PXI"):
         return "PXI"
-    else:
-        return "Unknown"
+    return "Unknown"
 
 
-def list_visa_resources(
+def list_gpib_resources(
     query_idn: bool = True,
     query_opt: bool = True,
     timeout_ms: int = 2000,
+    scan_addresses: bool = True,
+    boards: tuple[int, ...] = (0,),
+    address_range: range = range(1, 31),
 ) -> list[dict]:
     """
-    Enumerate all VISA resources and optionally query each for identity info.
+    Enumerate GPIB instruments only (filters out ASRL/USB/TCPIP/etc).
 
     Parameters
     ----------
-    query_idn : bool
-        Send *IDN? to every resource that responds to open(). Default True.
-    query_opt : bool
-        Send *OPT? after *IDN? to list installed options. Default True.
-    timeout_ms : int
-        Per-resource query timeout in milliseconds. Default 2000.
-
-    Returns
-    -------
-    list of dict, one entry per resource, each with keys:
-        'resource'   – VISA resource string
-        'interface'  – inferred interface type
-        'idn'        – *IDN? response, or None / error message
-        'options'    – *OPT? response, or None / error message
+    scan_addresses : bool
+        If True, actively probe every primary address on each board (1-30 by
+        default). Required with pyvisa-py because list_resources() does not
+        walk the GPIB bus.
+    boards : tuple of int
+        GPIB board indices to scan (e.g. (0,) for /dev/gpib0). Default (0,).
+    address_range : range
+        Primary addresses to probe. Default range(1, 31).
     """
     results = []
 
     try:
-        rm = pyvisa.ResourceManager()
+        rm = pyvisa.ResourceManager("@py")
     except Exception as e:
         logger.error(f"Failed to create ResourceManager: {e}")
         return results
 
-    resources = rm.list_resources()
-    if not resources:
-        logger.warning("No VISA resources found.")
+    # Build the candidate resource list.
+    if scan_addresses:
+        candidates = [
+            f"GPIB{b}::{a}::INSTR" for b in boards for a in address_range
+        ]
+    else:
+        # Trust list_resources() — works only with NI-VISA, not pyvisa-py.
+        candidates = list(rm.list_resources("GPIB?*::INSTR"))
+
+    if not candidates:
+        logger.warning("No GPIB resources to probe.")
+        rm.close()
         return results
 
-    logger.info(f"Found {len(resources)} VISA resource(s). Probing...")
+    logger.info(f"Probing {len(candidates)} GPIB resource(s)...")
     logger.info("-" * 60)
 
-    for resource_str in resources:
-        interface = _parse_interface(resource_str)
+    for resource_str in candidates:
         entry = {
             "resource":  resource_str,
-            "interface": interface,
+            "interface": _parse_interface(resource_str),
             "idn":       None,
             "options":   None,
         }
-
-        if not query_idn:
-            logger.info(f"[{interface}] {resource_str}")
-            results.append(entry)
-            continue
 
         inst = None
         try:
             inst = rm.open_resource(resource_str)
             inst.timeout = timeout_ms
 
-            # --- Identity ---
-            try:
-                idn = inst.query("*IDN?").strip()
-                entry["idn"] = idn
-            except pyvisa.VisaIOError as e:
-                entry["idn"] = f"IDN error: {e}"
-
-            # --- Options ---
-            if query_opt:
+            if query_idn:
                 try:
-                    opt = inst.query("*OPT?").strip()
-                    entry["options"] = opt if opt else "(none reported)"
-                except pyvisa.VisaIOError as e:
-                    entry["options"] = f"OPT error: {e}"
+                    entry["idn"] = inst.query("*IDN?").strip()
+                except pyvisa.VisaIOError:
+                    # Nothing at this address — skip silently when scanning.
+                    if scan_addresses:
+                        continue
+                    entry["idn"] = "IDN error"
+
+                if query_opt:
+                    try:
+                        opt = inst.query("*OPT?").strip()
+                        entry["options"] = opt if opt else "(none reported)"
+                    except pyvisa.VisaIOError as e:
+                        entry["options"] = f"OPT error: {e}"
 
         except pyvisa.VisaIOError as e:
+            if scan_addresses:
+                continue
             entry["idn"] = f"Could not open: {e}"
         finally:
-            if inst:
+            if inst is not None:
                 try:
                     inst.close()
                 except Exception:
                     pass
 
-        # --- Pretty log ---
         logger.info(f"Resource : {resource_str}")
-        logger.info(f"Interface: {interface}")
         logger.info(f"IDN      : {entry['idn']}")
         if query_opt:
             logger.info(f"Options  : {entry['options']}")
         logger.info("-" * 60)
-
         results.append(entry)
 
     rm.close()
